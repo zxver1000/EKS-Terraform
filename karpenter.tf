@@ -76,7 +76,6 @@ resource "helm_release" "karpenter" {
 ###
 ### NODE_ POOL
 
-### CLuster join이 안되네 왜지????? Networking 문젠가.. ㅅㅂ ㅠㅠ
 
 resource "kubectl_manifest" "karpenter_provisioner" {
  
