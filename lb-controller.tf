@@ -21,6 +21,8 @@ provider "kubernetes" {
   host                   = module.KHH-eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.KHH-eks.cluster_certificate_authority_data)
   token                  = data.aws_eks_cluster_auth.default.token
+  
+
 }
 
 ##
@@ -32,8 +34,9 @@ provider "helm" {
     host                   = module.KHH-eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.KHH-eks.cluster_certificate_authority_data)
     token                  = data.aws_eks_cluster_auth.default.token
-      
+   config_path = "~/.kube/KHH-Cluster"
   }
+
 }
 
 
@@ -59,6 +62,7 @@ resource "helm_release" "lb" {
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
   depends_on = [
+    module.KHH-eks,
     kubernetes_service_account.service-account
   ]
 

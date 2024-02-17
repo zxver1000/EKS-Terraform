@@ -9,6 +9,7 @@ module "KHH-eks"{
   cluster_endpoint_public_access  = true
 
  
+  #create_cloudwatch_log_group=false
   cluster_addons = {
     coredns = {
       most_recent = true
@@ -74,7 +75,13 @@ module "KHH-eks"{
   enable_irsa = true
   vpc_id          = module.KHH-vpc.vpc_id
   subnet_ids      = module.KHH-vpc.private_subnets
-
+  
+  tags = {
+    # NOTE - if creating multiple security groups with this module, only tag the
+    # security group that Karpenter should utilize with the following tag
+    # (i.e. - at most, only one security group should have this tag in your account)
+    "karpenter.sh/discovery" = var.cluster-name
+  }
   eks_managed_node_group_defaults = {
     instance_types = ["t3.small","t3.medium"]
     #iam_role_additional_policies={
@@ -83,12 +90,16 @@ module "KHH-eks"{
   }
 
   eks_managed_node_groups = {
-    examples= {
+    karpenter= {
       min_size     = 1
       max_size     = 1
       desired_size = 1
       instance_types = ["t3.medium","t3.small"]
       capacity_type  = "SPOT"
+      node_iam_role_additional_policies = [
+        # Required by Karpenter
+        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      ]
     }
   #  labels ={
   #    ondemand="true"
@@ -105,8 +116,25 @@ module "KHH-eks"{
       protocol                   = "TCP"
       cidr_blocks                = ["0.0.0.0/0"] 
       source_node_security_group = false
+    },
+    # Control plane invoke Karpenter webhook
+    ingress_karpenter_webhook_tcp = {
+      description                   = "Control plane invoke Karpenter webhook"
+      protocol                      = "tcp"
+      from_port                     = 8443
+      to_port                       = 8443
+      type                          = "ingress"
+      cidr_blocks                = ["0.0.0.0/0"] 
+      source_cluster_security_group = false
     }
   }
-
+ 
+#  aws_auth_roles = [
+#    {
+#      rolearn  = module.karpenter.role_arn
+#      username = "system:node:{{EC2PrivateDNSName}}"
+#      groups   = ["system:nodes", "system:bootstrappers"]
+#    }
+#  ]
 
 }

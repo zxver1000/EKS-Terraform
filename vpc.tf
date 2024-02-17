@@ -30,6 +30,7 @@ module "KHH-vpc" {
   private_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster-name}" = "shared"
     "kubernetes.io/role/internal-elb"             = "1"
+    "karpenter.sh/discovery"=  var.cluster-name
   }
 
   tags = {
